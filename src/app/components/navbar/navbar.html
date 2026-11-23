@@ -1,0 +1,112 @@
+<aside class="sidebar d-flex flex-column justify-content-between text-white">
+  <div>
+    <div class="sidebar-brand d-flex align-items-center gap-3 px-3 py-4 border-bottom border-secondary border-opacity-25">
+      <div class="brand-icon d-flex align-items-center justify-content-center rounded-3">
+        <i class="bi bi-headset fs-4"></i>
+      </div>
+      <div>
+        <div class="fw-bold fs-5 lh-1">ServiceDesk TI</div>
+        <small class="text-white-50">Mesa de Ayuda Corporativa</small>
+      </div>
+    </div>
+
+    <nav class="nav flex-column px-3 pt-4 gap-2">
+      @if (!authService.esSoporteOJefe()) {
+        <span class="text-uppercase text-white-50 fw-semibold px-2 mb-1" style="font-size: 0.72rem; letter-spacing: 0.06em;">
+          Mi Portal
+        </span>
+        <a routerLink="/tickets"
+           routerLinkActive="active"
+           [routerLinkActiveOptions]="{ paths: 'exact', queryParams: 'exact', fragment: 'ignored', matrixParams: 'ignored' }"
+           class="nav-link sidebar-link d-flex align-items-center gap-3 px-3 py-2 rounded-3">
+          <i class="bi bi-ticket-detailed fs-5"></i>
+          <span>Mis Tickets</span>
+        </a>
+        <a routerLink="/nuevo-ticket"
+           routerLinkActive="active"
+           class="nav-link sidebar-link d-flex align-items-center gap-3 px-3 py-2 rounded-3">
+          <i class="bi bi-plus-circle fs-5"></i>
+          <span>Reportar Incidencia</span>
+        </a>
+      }
+
+      @if (authService.esSoporteOJefe()) {
+        <span class="text-uppercase text-white-50 fw-semibold px-2 mb-1" style="font-size: 0.72rem; letter-spacing: 0.06em;">
+          {{ authService.esJefe() ? 'Supervisión TI' : 'Mesa de Soporte' }}
+        </span>
+
+        <a routerLink="/tickets"
+           routerLinkActive="active"
+           [routerLinkActiveOptions]="{ paths: 'exact', queryParams: 'exact', fragment: 'ignored', matrixParams: 'ignored' }"
+           class="nav-link sidebar-link d-flex align-items-center gap-3 px-3 py-2 rounded-3">
+          <i class="bi bi-speedometer2 fs-5"></i>
+          <span>{{ authService.esJefe() ? 'Tablero Global' : 'Cola Global' }}</span>
+        </a>
+
+        <a routerLink="/tickets"
+           [queryParams]="{ vista: 'sin-asignar' }"
+           routerLinkActive="active"
+           [routerLinkActiveOptions]="{ paths: 'exact', queryParams: 'exact', fragment: 'ignored', matrixParams: 'ignored' }"
+           class="nav-link sidebar-link d-flex align-items-center gap-3 px-3 py-2 rounded-3">
+          <i class="bi bi-inbox fs-5"></i>
+          <span>{{ authService.esJefe() ? 'Por Asignar' : 'Tickets Libres' }}</span>
+        </a>
+
+        <a routerLink="/tickets"
+           [queryParams]="{ vista: 'asignados' }"
+           routerLinkActive="active"
+           [routerLinkActiveOptions]="{ paths: 'exact', queryParams: 'exact', fragment: 'ignored', matrixParams: 'ignored' }"
+           class="nav-link sidebar-link d-flex align-items-center gap-3 px-3 py-2 rounded-3">
+          <i class="bi bi-person-workspace fs-5"></i>
+          <span>Mis Asignados</span>
+        </a>
+
+        <a routerLink="/nuevo-ticket"
+           routerLinkActive="active"
+           class="nav-link sidebar-link d-flex align-items-center gap-3 px-3 py-2 rounded-3">
+          <i class="bi bi-plus-circle fs-5"></i>
+          <span>Nuevo Ticket</span>
+        </a>
+      }
+
+      @if (authService.esJefe()) {
+        <span class="text-uppercase text-white-50 fw-semibold px-2 mt-3 mb-1" style="font-size: 0.72rem; letter-spacing: 0.06em;">
+          Administración
+        </span>
+        <a routerLink="/usuarios"
+           routerLinkActive="active"
+           class="nav-link sidebar-link d-flex align-items-center gap-3 px-3 py-2 rounded-3">
+          <i class="bi bi-people fs-5"></i>
+          <span>Gestión de Usuarios</span>
+        </a>
+      }
+    </nav>
+  </div>
+
+  @if (authService.usuarioActual(); as user) {
+    <div class="p-3 border-top border-secondary border-opacity-25">
+      <div class="user-card p-3 rounded-3 mb-3">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <div class="avatar-circle fw-bold">{{ iniciales() }}</div>
+          <div class="overflow-hidden">
+            <div class="fw-semibold text-truncate small">{{ user.nombre }}</div>
+            <div class="text-white-50 text-truncate" style="font-size: 0.75rem;">{{ user.email }}</div>
+          </div>
+        </div>
+        <div class="d-flex flex-wrap gap-1 mt-2">
+          <span class="badge" [class]="user.rol === 'JEFE_TI' ? 'bg-danger' : (user.rol === 'SOPORTE_TI' ? 'bg-primary' : 'bg-info text-dark')">
+            {{ user.rolEtiqueta }}
+          </span>
+          <span class="badge bg-secondary bg-opacity-50">{{ user.area }}</span>
+        </div>
+      </div>
+
+      <button type="button"
+              (click)="authService.logout()"
+              class="btn btn-danger w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold">
+        <i class="bi bi-box-arrow-left"></i>
+        <span>Cerrar sesión</span>
+      </button>
+    </div>
+  }
+</aside>

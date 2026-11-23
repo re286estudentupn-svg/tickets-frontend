@@ -1,0 +1,216 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <h2 class="fw-bold mb-1">{{ tituloPagina() }}</h2>
+    <p class="text-muted mb-0">{{ subtituloPagina() }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    @if (authService.esJefe()) {
+      <a routerLink="/usuarios" class="btn btn-outline-dark fw-semibold d-flex align-items-center gap-2 px-3 py-2">
+        <i class="bi bi-people"></i>
+        <span>Gestionar Usuarios</span>
+      </a>
+    }
+    <a routerLink="/nuevo-ticket" class="btn btn-primary fw-semibold d-flex align-items-center gap-2 px-3 py-2">
+      <i class="bi bi-plus-lg"></i>
+      <span>Registrar Incidencia</span>
+    </a>
+  </div>
+</div>
+
+@if (metricas(); as m) {
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="card border-0 border-start border-primary border-4 shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small fw-semibold">Tickets Pendientes</div>
+          <div class="fs-2 fw-bold text-primary mt-1">{{ m.pendientes }}</div>
+          <div class="small text-muted">En espera de atención</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="card border-0 border-start border-warning border-4 shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small fw-semibold">En Atención (Soporte)</div>
+          <div class="fs-2 fw-bold text-warning mt-1">{{ m.enAtencion }}</div>
+          <div class="small text-muted">Asignados y en progreso</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="card border-0 border-start border-success border-4 shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small fw-semibold">Tickets Resueltos</div>
+          <div class="fs-2 fw-bold text-success mt-1">{{ m.resueltos }}</div>
+          <div class="small text-muted">Documentados en bitácora</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="card border-0 border-start border-danger border-4 shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small fw-semibold">Críticos Activos</div>
+          <div class="fs-2 fw-bold text-danger mt-1">{{ m.criticosActivos }}</div>
+          <div class="small text-muted">Requieren atención inmediata</div>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-md-4">
+        <label class="form-label small fw-semibold text-muted mb-1">Buscar código, título o equipo</label>
+        <input type="text"
+               class="form-control"
+               [(ngModel)]="filtroBuscar"
+               (keyup.enter)="buscarTickets()"
+               placeholder="Ej. TCK-1021, Aruba, Odoo...">
+      </div>
+
+      <div class="col-6 col-md-2">
+        <label class="form-label small fw-semibold text-muted mb-1">Categoría</label>
+        <select class="form-select" [(ngModel)]="filtroCategoria" (change)="buscarTickets()">
+          <option value="">Todas</option>
+          @for (cat of categorias; track cat.valor) {
+            <option [value]="cat.valor">{{ cat.etiqueta }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="col-6 col-md-2">
+        <label class="form-label small fw-semibold text-muted mb-1">Prioridad</label>
+        <select class="form-select" [(ngModel)]="filtroPrioridad" (change)="buscarTickets()">
+          <option value="">Todas</option>
+          <option value="SIN_ASIGNAR">Sin asignar</option>
+          <option value="BAJA">Baja</option>
+          <option value="MEDIA">Media</option>
+          <option value="ALTA">Alta</option>
+          <option value="CRITICA">Crítica</option>
+        </select>
+      </div>
+
+      <div class="col-6 col-md-2">
+        <label class="form-label small fw-semibold text-muted mb-1">Estado</label>
+        <select class="form-select" [(ngModel)]="filtroEstado" (change)="buscarTickets()">
+          <option value="">Todos</option>
+          <option value="PENDIENTE">Pendiente</option>
+          <option value="ASIGNADO">Asignado</option>
+          <option value="EN_PROGRESO">En Progreso</option>
+          <option value="RESUELTO">Resuelto</option>
+        </select>
+      </div>
+
+      <div class="col-6 col-md-2 d-flex gap-2">
+        <button type="button" class="btn btn-primary w-100" (click)="buscarTickets()">
+          <i class="bi bi-search"></i>
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="limpiarFiltros()" title="Limpiar filtros">
+          <i class="bi bi-arrow-counterclockwise"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@if (exitoMensaje()) {
+  <div class="alert alert-success py-2"><i class="bi bi-check-circle-fill me-2"></i>{{ exitoMensaje() }}</div>
+}
+@if (errorMensaje()) {
+  <div class="alert alert-danger py-2">{{ errorMensaje() }}</div>
+}
+
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+    <h5 class="fw-bold mb-0">
+      @if (!authService.esSoporteOJefe()) {
+        Mis Incidencias Reportadas
+      } @else if (vistaActual() === 'asignados') {
+        Cola Asignada a Mi Usuario
+      } @else if (vistaActual() === 'sin-asignar') {
+        Tickets Sin Especialista Asignado
+      } @else {
+        Cola Global de Incidencias
+      }
+    </h5>
+    <span class="badge bg-light text-dark border">{{ tickets().length }} registros</span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Código</th>
+          <th>Incidencia / Ubicación</th>
+          @if (authService.esSoporteOJefe()) {
+            <th>Reportado por</th>
+          }
+          <th>Categoría</th>
+          <th>Prioridad</th>
+          <th>Estado</th>
+          <th>Especialista</th>
+          <th>Fecha</th>
+          <th class="text-end">Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (cargando()) {
+          <tr>
+            <td colspan="9" class="text-center py-4 text-muted">
+              <span class="spinner-border spinner-border-sm me-2"></span>Cargando incidencias...
+            </td>
+          </tr>
+        } @else if (tickets().length === 0) {
+          <tr>
+            <td colspan="9" class="text-center py-4 text-muted">
+              No se encontraron tickets con los criterios seleccionados.
+            </td>
+          </tr>
+        } @else {
+          @for (t of tickets(); track t.id) {
+            <tr>
+              <td class="fw-bold text-primary">{{ t.codigo }}</td>
+              <td>
+                <div class="fw-semibold">{{ t.titulo }}</div>
+                <small class="text-muted"><i class="bi bi-geo-alt me-1"></i>{{ t.ubicacion }}</small>
+              </td>
+              @if (authService.esSoporteOJefe()) {
+                <td class="small">{{ t.creador.nombre }}</td>
+              }
+              <td><span class="badge bg-secondary bg-opacity-75">{{ t.categoriaEtiqueta }}</span></td>
+              <td><span class="badge" [class]="clasePrioridad(t.prioridad)">{{ t.prioridadEtiqueta }}</span></td>
+              <td><span class="badge" [class]="claseEstado(t.estado)">{{ t.estadoEtiqueta }}</span></td>
+              <td>
+                @if (t.tecnicoAsignado) {
+                  <span class="small fw-medium">{{ t.tecnicoAsignado.nombre }}</span>
+                } @else {
+                  <span class="badge bg-warning bg-opacity-25 text-dark">Sin asignar</span>
+                }
+              </td>
+              <td class="small text-muted">{{ t.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td class="text-end">
+                <div class="d-inline-flex gap-1">
+                  @if (authService.esSoporteOJefe() && !t.tecnicoAsignado && t.estado !== 'RESUELTO') {
+                    <button type="button" class="btn btn-success btn-sm" (click)="tomarRapido(t)">
+                      <i class="bi bi-hand-index-thumb me-1"></i>Tomar
+                    </button>
+                  }
+                  <a [routerLink]="['/tickets', t.id]"
+                     class="btn btn-sm"
+                     [class]="authService.esJefe() ? 'btn-outline-danger' : (authService.esSoporteOJefe() ? 'btn-outline-primary' : 'btn-outline-secondary')">
+                    {{ authService.esJefe() ? 'Gestionar' : (authService.esSoporteOJefe() ? 'Atender' : 'Ver Seguimiento') }}
+                  </a>
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

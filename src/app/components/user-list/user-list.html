@@ -1,0 +1,188 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <h2 class="fw-bold mb-1">Gestión de Usuarios y Roles</h2>
+    <p class="text-muted mb-0">Administración de cuentas corporativas y niveles de acceso (exclusivo Jefe de TI)</p>
+  </div>
+  <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-3 py-2">
+    <i class="bi bi-shield-lock-fill me-1"></i> Módulo de Administración TI
+  </span>
+</div>
+
+@if (mensajeExito()) {
+  <div class="alert alert-success py-2"><i class="bi bi-check-circle-fill me-2"></i>{{ mensajeExito() }}</div>
+}
+@if (mensajeError()) {
+  <div class="alert alert-danger py-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ mensajeError() }}</div>
+}
+
+<div class="row g-4">
+  <!-- Formulario crear usuario -->
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-primary text-white py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-person-plus-fill me-2"></i>Crear Nueva Cuenta</h6>
+      </div>
+      <div class="card-body">
+        <form (ngSubmit)="crearCuenta()">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Nombre completo *</label>
+            <input type="text" class="form-control" name="nombre" [(ngModel)]="nombre" placeholder="Ej. Andrea Morales" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Correo corporativo *</label>
+            <input type="email" class="form-control" name="email" [(ngModel)]="email" placeholder="amorales@empresa.pe" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Contraseña inicial *</label>
+            <input type="password"
+                   class="form-control"
+                   name="password"
+                   [(ngModel)]="password"
+                   maxlength="12"
+                   [placeholder]="debeCambiarPassword ? 'Clave temporal (ej. 12345)' : '6 a 12 caracteres (Mayús, minús, núm)'"
+                   required>
+            <div class="form-text">
+              @if (debeCambiarPassword) {
+                Clave temporal (5 a 12 caracteres). El usuario deberá establecer una contraseña segura al ingresar.
+              } @else {
+                6 a 12 caracteres: al menos 1 mayúscula, 1 minúscula y 1 número (símbolos opcionales).
+              }
+            </div>
+          </div>
+
+          <div class="form-check mb-3">
+            <input class="form-check-input"
+                   type="checkbox"
+                   id="checkCambioClave"
+                   name="debeCambiarPassword"
+                   [(ngModel)]="debeCambiarPassword">
+            <label class="form-check-label small" for="checkCambioClave">
+              Exigir cambio de contraseña en el primer inicio de sesión
+            </label>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Rol del sistema *</label>
+            <select class="form-select" name="rol" [(ngModel)]="rol">
+              <option value="USUARIO_FINAL">Usuario Final (Colaborador)</option>
+              <option value="SOPORTE_TI">Soporte Técnico TI</option>
+              <option value="JEFE_TI">Jefe de TI</option>
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label small fw-semibold">Área *</label>
+            <select class="form-select" name="area" [(ngModel)]="area" required>
+              <option value="" disabled>Seleccione un área...</option>
+              @for (a of areas; track a) {
+                <option [value]="a">{{ a }}</option>
+              }
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 fw-semibold" [disabled]="guardando()">
+            @if (guardando()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>Creando...
+            } @else {
+              <i class="bi bi-check-lg me-1"></i> Registrar Cuenta
+            }
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla directorio con edicion de Area/Rol -->
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0">Cuentas Registradas</h6>
+        <span class="badge bg-light text-dark border">{{ usuarios().length }} usuarios</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Nombre / Correo</th>
+              <th>Rol</th>
+              <th>Área</th>
+              <th>Estado</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (cargando()) {
+              <tr><td colspan="5" class="text-center py-4 text-muted">Cargando directorio...</td></tr>
+            } @else {
+              @for (u of usuarios(); track u.id) {
+                <tr>
+                  @if (editandoId() === u.id) {
+                    <td>
+                      <input type="text" class="form-control form-control-sm mb-1" [(ngModel)]="editNombre">
+                      <small class="text-muted">{{ u.email }}</small>
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" [(ngModel)]="editRol" [disabled]="u.email === authService.usuarioActual()?.email">
+                        <option value="USUARIO_FINAL">Usuario Final</option>
+                        <option value="SOPORTE_TI">Soporte Técnico TI</option>
+                        <option value="JEFE_TI">Jefe de TI</option>
+                      </select>
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" [(ngModel)]="editArea">
+                        @for (a of areas; track a) {
+                          <option [value]="a">{{ a }}</option>
+                        }
+                      </select>
+                    </td>
+                    <td>
+                      <span class="badge" [class]="u.activo ? 'bg-success' : 'bg-secondary'">
+                        {{ u.activo ? 'Activo' : 'Inactivo' }}
+                      </span>
+                    </td>
+                    <td class="text-end">
+                      <div class="d-inline-flex gap-1">
+                        <button type="button" class="btn btn-success btn-sm" (click)="guardarEdicion(u.id)">Guardar</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="cancelarEdicion()">Cancelar</button>
+                      </div>
+                    </td>
+                  } @else {
+                    <td>
+                      <div class="fw-semibold">{{ u.nombre }}</div>
+                      <small class="text-muted">{{ u.email }}</small>
+                      @if (u.debeCambiarPassword) {
+                        <div><span class="badge bg-warning text-dark mt-1" style="font-size: 0.7rem;">Cambio de clave pendiente</span></div>
+                      }
+                    </td>
+                    <td><span class="badge" [class]="claseRol(u.rol)">{{ u.rolEtiqueta }}</span></td>
+                    <td class="small">{{ u.area }}</td>
+                    <td>
+                      <span class="badge" [class]="u.activo ? 'bg-success' : 'bg-secondary'">
+                        {{ u.activo ? 'Activo' : 'Inactivo' }}
+                      </span>
+                    </td>
+                    <td class="text-end">
+                      <div class="d-inline-flex gap-1">
+                        <button type="button" class="btn btn-outline-primary btn-sm" (click)="iniciarEdicion(u)" title="Corregir área o rol">
+                          Editar
+                        </button>
+                        @if (u.email !== authService.usuarioActual()?.email) {
+                          <button type="button"
+                                  class="btn btn-sm"
+                                  [class]="u.activo ? 'btn-outline-danger' : 'btn-outline-success'"
+                                  (click)="cambiarEstado(u)">
+                            {{ u.activo ? 'Desactivar' : 'Activar' }}
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  }
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
